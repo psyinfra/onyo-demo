@@ -4,3 +4,4 @@ make: apple
 model: macbookpro
 display: 13.3
 serial: 0io4ff
+USB_A: 2

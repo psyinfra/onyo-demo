@@ -1,0 +1,5 @@
+[onyo "history"]
+	interactive = tig --follow
+	non-interactive = git --no-pager log --follow
+[onyo "new"]
+	template = empty

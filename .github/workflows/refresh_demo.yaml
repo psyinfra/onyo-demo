@@ -1,0 +1,57 @@
+name: Onyo Demo
+on:
+  schedule:
+    # format
+    # * * * * *
+    # | | | | |
+    # | | | | day of the week (0–6)
+    # | | | month (1–12)
+    # | | day of the month (1–31)
+    # | hour (0–23)
+    # minute (0–59)
+    - cron: '53 4 * * *'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: git config
+        run: |
+          git config --global user.email "yoko@onyo.org"
+          git config --global user.name "Yoko Onyo"
+      - name: Install latest Onyo
+        run: |
+          python -m pip install --upgrade pip
+          git clone https://github.com/psyinfra/onyo.git /tmp/onyo
+          pip install -e /tmp/onyo
+      - name: Generate and publish a fresh demo repository
+        run: |
+          printf '\nGenerate a fresh demo repository.\n'
+          /tmp/onyo/demo/generate_demo_repo.sh /tmp/fresh_demo
+
+          printf '\nCopy .github/ original -> fresh demo (to retain workflow and .onyoignore).\n'
+          cp -Rav .github /tmp/fresh_demo/
+
+          printf '\nCommit the .github/ directory in fresh demo.\n'
+          git -C /tmp/fresh_demo add .github
+          git -C /tmp/fresh_demo commit -m 'add .github/ workflows'
+
+          printf '\nIn the original repo, add the fresh demo repo as a remote.\n'
+          git remote -v add fresh_demo /tmp/fresh_demo
+          git fetch fresh_demo
+
+          printf '\nGet branch name of the fresh demo repo.\n'
+          FRESH_DEMO_BRANCH_NAME=$(git -C /tmp/fresh_demo rev-parse --abbrev-ref HEAD)
+          printf 'Got: %s\n' "$FRESH_DEMO_BRANCH_NAME"
+
+          printf '\nHard reset the original repo to match the fresh demo.\n'
+          git reset --hard "fresh_demo/${FRESH_DEMO_BRANCH_NAME}"
+
+          printf '\nForce push original repo back to origin.\n'
+          git push --force
